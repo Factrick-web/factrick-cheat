@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Admin - Factrick</title>
+<style>
+body { 
+  margin:0; 
+  font-family:Arial; 
+  background:linear-gradient(135deg,#1c1c1c,#3d0066); 
+  color:white; 
+  display:flex; 
+  justify-content:center; 
+  align-items:center; 
+  height:100vh; 
+}
+.box { 
+  background: rgba(0,0,0,0.8); 
+  padding:30px; 
+  border-radius:15px; 
+  box-shadow:0 0 20px rgba(255,0,255,0.4); 
+  text-align:center; 
+  width:400px; 
+  display:none; 
+}
+.box.active { display:block; }
+input, select, button, textarea { 
+  margin:10px 0; 
+  padding:10px; 
+  border-radius:8px; 
+  border:none; 
+  width:90%; 
+}
+button { 
+  background:#a200ff; 
+  color:white; 
+  cursor:pointer; 
+  font-weight:bold; 
+}
+button:hover { background:#6d00aa; }
+.topbar { 
+  position:absolute; 
+  top:10px; 
+  right:10px; 
+  background:#111; 
+  padding:10px 20px; 
+  border-radius:10px; 
+  font-size:14px; 
+  box-shadow:0 0 10px rgba(255,255,255,0.3); 
+}
+.result { margin-top:15px; font-weight:bold; color:#0f0; }
+.section { margin-top:20px; background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; }
+.notifications { position:fixed; bottom:20px; right:20px; background:#a200ff; color:#fff; padding:10px 15px; border-radius:10px; cursor:pointer; box-shadow:0 0 10px rgba(0,0,0,0.5); }
+.notification-box { position:fixed; bottom:60px; right:20px; background:rgba(0,0,0,0.9); padding:15px; border-radius:10px; width:300px; display:none; max-height:400px; overflow:auto; }
+.notification-box p { background:#2c004d; padding:10px; border-radius:8px; margin:5px 0; }
+a { color:#aaa; text-decoration:none; cursor:pointer; }
+a:hover { color:#fff; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN ADMIN -->
+<div class="box active" id="adminLoginBox">
+  <h2>Admin Login</h2>
+  <input type="password" id="adminKeyInput" placeholder="Introduce la key de admin">
+  <button onclick="loginAdmin()">Entrar</button>
+  <p id="adminLoginError" style="color:red;display:none;">Key incorrecta</p>
+</div>
+
+<!-- PANEL ADMIN -->
+<div class="box" id="adminPanelBox">
+  <div class="topbar" id="topbarAdmin">Admin Panel</div>
+  <h2>Factrick Admin</h2>
+
+  <!-- Generar Key -->
+  <div class="section">
+    <h3>Generar Key Usuario</h3>
+    <input type="text" id="userTarget" placeholder="Usuario destinatario">
+    <select id="productoAdmin">
+      <option value="drip">Drip Client</option>
+      <option value="hg">HG CHEAT</option>
+    </select>
+    <select id="tiempoAdmin">
+      <option value="1">1 Día</option>
+      <option value="7">7 Días</option>
+      <option value="15">15 Días</option>
+      <option value="30">1 Mes</option>
+      <option value="365">1 Año</option>
+    </select>
+    <button onclick="generarKeyAdmin()">Generar Key</button>
+    <div class="result" id="resultadoAdmin"></div>
+  </div>
+
+  <!-- Reset Key -->
+  <div class="section">
+    <h3>Reset Key</h3>
+    <input type="text" id="resetInputAdmin" placeholder="Introduce la key">
+    <button onclick="resetKeyAdmin()">Resetear</button>
+    <div class="result" id="resetMsgAdmin"></div>
+  </div>
+
+  <!-- Agregar Saldo -->
+  <div class="section">
+    <h3>Agregar Saldo</h3>
+    <input type="text" id="saldoUserInput" placeholder="Usuario destinatario">
+    <input type="number" id="saldoCantidadInput" placeholder="Cantidad de saldo">
+    <button onclick="agregarSaldo()">Agregar Saldo</button>
+    <div class="result" id="saldoMsgAdmin"></div>
+  </div>
+
+  <!-- Enviar Notificación -->
+  <div class="section">
+    <h3>Enviar Notificación</h3>
+    <textarea id="notifyInput" placeholder="Escribe el mensaje"></textarea>
+    <button onclick="sendNotification()">Enviar Notificación</button>
+  </div>
+
+  <button onclick="logoutAdmin()">Cerrar Sesión</button>
+</div>
+
+<!-- Botón Notificaciones Usuario -->
+<div class="notifications" id="notifyBtn" onclick="toggleNotificationBox()">🔔 Notificaciones</div>
+<div class="notification-box" id="notifyBox"></div>
+
+<script>
+// --- VARIABLES ---
+const adminKey = "1418";
+let notifications = JSON.parse(localStorage.getItem("notifications")||"[]");
+
+// ELEMENTOS
+const adminLoginBox = document.getElementById("adminLoginBox");
+const adminPanelBox = document.getElementById("adminPanelBox");
+const adminKeyInput = document.getElementById("adminKeyInput");
+const adminLoginError = document.getElementById("adminLoginError");
+
+const resultadoAdmin = document.getElementById("resultadoAdmin");
+const resetMsgAdmin = document.getElementById("resetMsgAdmin");
+
+const notifyInput = document.getElementById("notifyInput");
+const notifyBox = document.getElementById("notifyBox");
+const notifyBtn = document.getElementById("notifyBtn");
+
+// --- LOGIN ADMIN ---
+function loginAdmin(){
+  const key = adminKeyInput.value.trim();
+  if(key === adminKey){
+    adminLoginBox.classList.remove("active");
+    adminPanelBox.classList.add("active");
+    adminLoginError.style.display="none";
+  } else { adminLoginError.style.display="block"; }
+}
+
+// --- GENERAR KEY ---
+function generarKeyAdmin(){
+  const user = document.getElementById("userTarget").value.trim();
+  const producto = document.getElementById("productoAdmin").value;
+  const tiempo = document.getElementById("tiempoAdmin").value;
+
+  if(!user) return alert("Ingresa usuario destinatario");
+
+  let key = producto==="drip" ? "KEY-"+Math.floor(1000000000+Math.random()*9000000000)
+                               : "HG-FACTRICK-"+Math.floor(10000+Math.random()*90000);
+  resultadoAdmin.innerText = `✅ Key generada para ${user}: ${key}`;
+
+  // Guardar key en localStorage (simulación)
+  let users = JSON.parse(localStorage.getItem("users")||"{}");
+  if(!users[user]) users[user] = {pass:"", saldo:0, keys:[]};
+  if(!users[user].keys) users[user].keys = [];
+  users[user].keys.push(key);
+  localStorage.setItem("users", JSON.stringify(users));
+}
+
+// --- RESET KEY ---
+function resetKeyAdmin(){
+  let keyVal = document.getElementById("resetInputAdmin").value.trim();
+  resetMsgAdmin.innerText = keyVal.length>0 ? "🔄 Key correctamente reseteada" : "⚠️ Ingresa una key válida";
+}
+
+// --- AGREGAR SALDO ---
+function agregarSaldo(){
+  const user = document.getElementById("saldoUserInput").value.trim();
+  const cantidad = parseFloat(document.getElementById("saldoCantidadInput").value.trim());
+  
+  if(!user) return alert("Ingresa el usuario");
+  if(isNaN(cantidad) || cantidad <= 0) return alert("Ingresa una cantidad válida");
+
+  let users = JSON.parse(localStorage.getItem("users")||"{}");
+  if(!users[user]) users[user] = {pass:"", saldo:0, keys:[]};
+
+  users[user].saldo += cantidad;
+  localStorage.setItem("users", JSON.stringify(users));
+
+  document.getElementById("saldoMsgAdmin").innerText = 
+    `✅ Se agregaron ${cantidad} créditos al usuario ${user}. Nuevo saldo: ${users[user].saldo}`;
+}
+
+// --- NOTIFICACIONES ---
+function sendNotification(){
+  const msg = notifyInput.value.trim();
+  if(!msg) return alert("Escribe un mensaje");
+  notifications.push(msg);
+  localStorage.setItem("notifications", JSON.stringify(notifications));
+  notifyInput.value = "";
+  alert("Notificación enviada");
+}
+
+function toggleNotificationBox(){
+  if(notifyBox.style.display==="block") notifyBox.style.display="none";
+  else {
+    notifyBox.innerHTML = "";
+    notifications.forEach(n=>{
+      let p = document.createElement("p");
+      p.innerText = n;
+      notifyBox.appendChild(p);
+    });
+    notifyBox.style.display="block";
+  }
+}
+
+// --- LOGOUT ---
+function logoutAdmin(){
+  adminPanelBox.classList.remove("active");
+  adminLoginBox.classList.add("active");
+}
+</script>
+
+</body>
+</html>
