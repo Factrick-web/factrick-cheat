@@ -51,6 +51,13 @@ button:hover { background:#6d00aa; }
 .result { margin-top:15px; font-weight:bold; color:#0f0; }
 .section { margin-top:20px; background:rgba(255,255,255,0.05); padding:15px; border-radius:10px; }
 a { color:#aaa; text-decoration:none; cursor:pointer; }
+a:hover { color:#fff; }
+.contact-icons img { 
+  margin:0 5px; 
+  vertical-align:middle; 
+  transition: transform 0.2s; 
+}
+.contact-icons img:hover { transform: scale(1.2); }
 </style>
 </head>
 <body>
@@ -100,6 +107,16 @@ a { color:#aaa; text-decoration:none; cursor:pointer; }
     </select>
     <button onclick="generarKey()">Generar</button>
     <div class="result" id="resultado"></div>
+
+    <!-- Contacto -->
+    <div class="contact-icons" style="margin-top:15px;">
+      <a href="https://wa.me/573001234567" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="30" alt="WhatsApp">
+      </a>
+      <a href="https://www.tiktok.com/@tu_usuario" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/TikTok_logo.svg" width="30" alt="TikTok">
+      </a>
+    </div>
   </div>
 
   <div class="section">
