@@ -7,21 +7,24 @@
 body { 
   margin:0; 
   font-family:Arial; 
-  background:linear-gradient(135deg,#111,#3d0066); 
+  background:linear-gradient(135deg,#1c1c1c,#3d0066); 
   color:white; 
   display:flex; 
   justify-content:center; 
   align-items:flex-start; 
-  padding-top:50px; 
+  padding-top:30px;
+  min-height:100vh;
 }
 .box { 
-  background: rgba(0,0,0,0.9); 
-  padding:20px; 
+  background: rgba(0,0,0,0.85); 
+  padding:30px; 
   border-radius:15px; 
-  width:400px; 
+  box-shadow:0 0 20px rgba(255,0,255,0.4); 
   text-align:center; 
+  width:450px; 
+  margin-bottom:20px;
 }
-input, button, select, textarea { 
+input, button, select { 
   margin:10px 0; 
   padding:10px; 
   border-radius:8px; 
@@ -29,152 +32,162 @@ input, button, select, textarea {
   width:90%; 
 }
 button { 
-  background:#d32f2f; 
+  background:#a200ff; 
   color:white; 
   cursor:pointer; 
   font-weight:bold; 
 }
-button:hover { background:#f44336; }
-textarea { height:100px; }
-.result { margin-top:10px; font-weight:bold; color:#0f0; }
-a { color:#aaa; text-decoration:none; cursor:pointer; }
-.section { margin-top:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; }
+button:hover { background:#6d00aa; }
+h2,h3 { margin-bottom:10px; }
+.user-list { 
+  text-align:left; 
+  max-height:150px; 
+  overflow-y:auto; 
+  background:rgba(255,255,255,0.05); 
+  padding:10px; 
+  border-radius:10px; 
+}
+.user-list div { margin-bottom:5px; }
+.result { margin-top:5px; color:#0f0; font-weight:bold;}
 </style>
 </head>
 <body>
 
-<!-- LOGIN ADMIN -->
-<div class="box" id="loginBox">
-  <h2>Admin Login</h2>
-  <input type="text" id="adminUser" placeholder="Usuario">
-  <input type="password" id="adminPass" placeholder="Contraseña">
-  <button onclick="loginAdmin()">Entrar</button>
-  <p id="loginError" style="color:red;display:none;">Credenciales incorrectas</p>
-</div>
+<div class="box">
+  <h2>Admin Panel - Factrick</h2>
 
-<!-- PANEL ADMIN -->
-<div class="box" id="panelBox" style="display:none;">
-  <h2>Panel Administrador</h2>
-
+  <!-- USUARIOS -->
   <div class="section">
-    <h3>Usuarios Registrados</h3>
-    <select id="userList"></select>
-    <input type="number" id="recMonto" placeholder="Monto a recargar">
-    <button onclick="recargarSaldo()">Recargar Saldo</button>
-    <div class="result" id="recMsg"></div>
+    <h3>Usuarios registrados</h3>
+    <div id="userList" class="user-list"></div>
   </div>
 
+  <!-- GENERAR KEY -->
   <div class="section">
-    <h3>Generar Key Manual</h3>
+    <h3>Generar Key</h3>
+    <select id="genUser"></select>
     <select id="producto">
       <option value="drip">Drip Client</option>
       <option value="hg">HG CHEAT</option>
     </select>
-    <button onclick="generarKeyAdmin()">Generar Key</button>
-    <div class="result" id="resultado"></div>
+    <select id="tiempo">
+      <option value="1">1 Día - $1</option>
+      <option value="7">7 Días - $5</option>
+      <option value="15">15 Días - $12</option>
+      <option value="30">1 Mes - $25</option>
+      <option value="365">1 Año - $50</option>
+    </select>
+    <button onclick="adminGenerarKey()">Generar</button>
+    <div class="result" id="keyResult"></div>
   </div>
 
+  <!-- RESET KEY -->
   <div class="section">
-    <h3>Historial de Keys</h3>
-    <textarea id="historial" readonly></textarea>
+    <h3>Reset Key</h3>
+    <select id="resetUser"></select>
+    <input type="text" id="resetInput" placeholder="Introduce la key">
+    <button onclick="adminResetKey()">Resetear</button>
+    <div class="result" id="resetResult"></div>
   </div>
 
+  <!-- NOTIFICACIONES -->
   <div class="section">
-    <h3>Enviar Notificación a Usuarios</h3>
-    <textarea id="mensajeAdmin" placeholder="Escribe tu mensaje"></textarea>
-    <button onclick="enviarNotificacion()">Enviar Notificación</button>
-    <div class="result" id="notiMsg"></div>
+    <h3>Enviar Notificación</h3>
+    <select id="notiUser"></select>
+    <input type="text" id="notiText" placeholder="Mensaje de notificación">
+    <button onclick="sendNoti()">Enviar</button>
+    <div class="result" id="notiResult"></div>
   </div>
 
-  <button onclick="logoutAdmin()">Cerrar Sesión</button>
+  <button onclick="logoutAdmin()">Cerrar sesión</button>
 </div>
 
 <script>
-const adminCorrectUser = "factrick";
-const adminCorrectPass = "1418";
-let historial = [];
-
-// ELEMENTOS
-const loginBox = document.getElementById("loginBox");
-const panelBox = document.getElementById("panelBox");
-const loginError = document.getElementById("loginError");
-const userList = document.getElementById("userList");
-const recMonto = document.getElementById("recMonto");
-const recMsg = document.getElementById("recMsg");
+// --- VARIABLES ---
+const userListDiv = document.getElementById("userList");
+const genUser = document.getElementById("genUser");
+const resetUser = document.getElementById("resetUser");
+const notiUser = document.getElementById("notiUser");
 const productoSelect = document.getElementById("producto");
-const resultado = document.getElementById("resultado");
-const historialBox = document.getElementById("historial");
-const mensajeAdmin = document.getElementById("mensajeAdmin");
-const notiMsg = document.getElementById("notiMsg");
+const tiempoSelect = document.getElementById("tiempo");
+const keyResult = document.getElementById("keyResult");
+const resetInput = document.getElementById("resetInput");
+const resetResult = document.getElementById("resetResult");
+const notiText = document.getElementById("notiText");
+const notiResult = document.getElementById("notiResult");
 
-// LOGIN ADMIN
-function loginAdmin(){
-  const u = document.getElementById("adminUser").value.trim().toLowerCase();
-  const p = document.getElementById("adminPass").value.trim();
-  if(u === adminCorrectUser && p === adminCorrectPass){
-    loginBox.style.display="none";
-    panelBox.style.display="block";
-    loginError.style.display="none";
-    actualizarUsuarios();
-  } else { loginError.style.display="block"; }
-}
+// Precios
+const precios = { "1":1, "7":5, "15":12, "30":25, "365":50 };
 
-// ACTUALIZAR SELECT DE USUARIOS
-function actualizarUsuarios(){
+// --- CARGAR USUARIOS ---
+function loadUsers(){
   let users = JSON.parse(localStorage.getItem("users")||"{}");
-  userList.innerHTML="";
-  Object.keys(users).forEach(u=>{
-    let opt = document.createElement("option");
-    opt.value=u;
-    opt.text=u+" | Saldo: $"+users[u].saldo;
-    userList.appendChild(opt);
-  });
+  userListDiv.innerHTML="";
+  [genUser, resetUser, notiUser].forEach(s=>s.innerHTML="");
+  for(let u in users){
+    userListDiv.innerHTML += `<div>${u} | Saldo: $${users[u].saldo}</div>`;
+    genUser.innerHTML += `<option value="${u}">${u}</option>`;
+    resetUser.innerHTML += `<option value="${u}">${u}</option>`;
+    notiUser.innerHTML += `<option value="${u}">${u}</option>`;
+  }
 }
 
-// RECARGAR SALDO
-function recargarSaldo(){
+// --- ADMIN GENERAR KEY ---
+function adminGenerarKey(){
+  let user = genUser.value;
   let users = JSON.parse(localStorage.getItem("users")||"{}");
-  let u = userList.value;
-  let monto = parseInt(recMonto.value);
-  if(u && monto>0){
-    users[u].saldo = (users[u].saldo||0)+monto;
-    localStorage.setItem("users",JSON.stringify(users));
-    recMsg.innerText = "✅ Recargado $"+monto+" a "+u;
-    actualizarUsuarios();
-  } else { recMsg.innerText="❌ Datos inválidos"; }
+  let producto = productoSelect.value;
+  let tiempoVal = tiempoSelect.value;
+  let precio = precios[tiempoVal];
+
+  if(users[user].saldo < precio){
+    keyResult.innerText = "Saldo insuficiente";
+    return;
+  }
+
+  users[user].saldo -= precio;
+  let key = producto==="drip" ? "KEY-"+Math.floor(1000000000+Math.random()*9000000000)
+                               : "HG-FACTRICK-"+Math.floor(10000+Math.random()*90000);
+  if(!users[user].keys) users[user].keys=[];
+  users[user].keys.push(key);
+
+  localStorage.setItem("users", JSON.stringify(users));
+  loadUsers();
+  keyResult.innerText = `✅ Key generada para ${user}: ${key}`;
 }
 
-// GENERAR KEY ADMIN
-function generarKeyAdmin(){
-  let prod = productoSelect.value;
-  let key = prod==="drip" ? "KEY-"+Math.floor(1000000000+Math.random()*9000000000)
-                          : "HG-FACTRICK-"+Math.floor(10000+Math.random()*90000);
-  historial.push(key);
-  historialBox.value = historial.join("\n");
-  resultado.innerText = "✅ Key generada: "+key;
+// --- ADMIN RESET KEY ---
+function adminResetKey(){
+  let user = resetUser.value;
+  let keyVal = resetInput.value.trim();
+  if(!keyVal) { resetResult.innerText = "⚠️ Ingresa una key válida"; return; }
+  let users = JSON.parse(localStorage.getItem("users")||"{}");
+  if(users[user].keys){
+    users[user].keys = users[user].keys.filter(k=>k!==keyVal);
+  }
+  localStorage.setItem("users", JSON.stringify(users));
+  resetInput.value="";
+  resetResult.innerText = `🔄 Key reseteada para ${user}`;
 }
 
-// ENVIAR NOTIFICACION
-function enviarNotificacion(){
-  const msg = mensajeAdmin.value.trim();
+// --- ENVIAR NOTIFICACIÓN ---
+function sendNoti(){
+  const user = notiUser.value;
+  const msg = notiText.value.trim();
   if(!msg) return alert("Escribe un mensaje");
-  let mensajes = JSON.parse(localStorage.getItem("mensajes") || "[]");
-  mensajes.push(msg);
-  localStorage.setItem("mensajes", JSON.stringify(mensajes));
-  notiMsg.innerText = "✅ Notificación enviada a todos los usuarios";
-  mensajeAdmin.value="";
+  let users = JSON.parse(localStorage.getItem("users")||"{}");
+  if(!users[user].notificaciones) users[user].notificaciones=[];
+  users[user].notificaciones.push(msg);
+  localStorage.setItem("users", JSON.stringify(users));
+  notiResult.innerText = `Notificación enviada a ${user}`;
+  notiText.value="";
 }
 
-// LOGOUT ADMIN
-function logoutAdmin(){
-  panelBox.style.display="none";
-  loginBox.style.display="block";
-  document.getElementById("adminUser").value="";
-  document.getElementById("adminPass").value="";
-  historial=[];
-  historialBox.value="";
-  notiMsg.innerText="";
-}
+// --- LOGOUT ---
+function logoutAdmin(){ window.location.href="index.html"; }
+
+// --- INICIALIZACIÓN ---
+window.onload = function(){ loadUsers(); };
 </script>
 
 </body>
